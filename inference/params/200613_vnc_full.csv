@@ -1,0 +1,25 @@
+x_start,y_start,z_start,x_stop,y_stop,z_stop,mip,model_name,tgt_radius,skip,comment
+21000,147000,1,77500,230000,210,0,vector_fixer30_faster_v01,5,0,original
+21000,147000,11,77500,230000,13,0,vector_fixer30_faster_v01,5,1,"2x missing"
+21000,147000,14,77500,230000,15,0,vector_fixer30_faster_v01,5,1,missing
+21000,147000,20,77500,230000,21,0,vector_fixer30_faster_v01,5,1,missing
+21000,147000,23,77500,230000,25,0,vector_fixer30_faster_v01,5,1,"2x missing"
+21000,147000,29,77500,230000,32,0,vector_fixer30_faster_v01,5,1,"3x missing"
+21000,147000,44,77500,230000,45,0,vector_fixer30_faster_v01,5,1,missing
+5000,110000,210,82000,230000,585,0,vector_fixer30_faster_v01,5,0,original
+0,0,585,90000,230000,1431,0,vector_fixer30_faster_v01,5,0,original
+0,0,820,90000,230000,821,0,vector_fixer30_faster_v01,5,1,missing
+0,0,1013,90000,230000,1014,0,vector_fixer30_faster_v01,5,1,missing
+0,0,1033,90000,230000,1034,0,vector_fixer30_faster_v01,5,1,missing
+0,0,1195,90000,230000,1196,0,vector_fixer30_faster_v01,5,1,missing
+0,47000,1431,90000,230000,3217,0,vector_fixer30_faster_v01,5,0,original
+0,47000,2605,90000,230000,2606,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,3217,90000,187000,4400,0,vector_fixer30_faster_v01,5,0,original
+0,71000,3363,90000,187000,3364,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,3456,90000,187000,3457,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,3499,90000,187000,3500,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,3709,90000,187000,3710,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,3810,90000,187000,3811,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,4128,90000,187000,4129,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,4231,90000,187000,4232,0,vector_fixer30_faster_v01,5,1,missing
+0,71000,4246,90000,187000,4247,0,vector_fixer30_faster_v01,5,1,missing
