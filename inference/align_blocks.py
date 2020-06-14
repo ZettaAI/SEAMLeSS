@@ -52,6 +52,8 @@ if __name__ == '__main__':
   # parser.add_argument('--z_range_path', type=str, 
   #   help='path to csv file with list of z indices to use')
   parser.add_argument('--src_path', type=str)
+  parser.add_argument('--info_path', type=str,
+    help='path to CloudVolume to use as template info file')
   parser.add_argument('--src_mask_path', type=str, default='',
     help='CloudVolume path of mask to use with src images; default None')
   parser.add_argument('--src_mask_mip', type=int, default=8,
@@ -84,7 +86,10 @@ if __name__ == '__main__':
   block_size = args.block_size
 
   # Create CloudVolume Manager
-  cm = CloudManager(args.src_path, max_mip, pad, provenance, batch_size=1,
+  template_path = args.src_path
+  if args.info_path:
+    template_path = args.info_path
+  cm = CloudManager(template_path, max_mip, pad, provenance, batch_size=1,
                     size_chunk=chunk_size, batch_mip=mip)
 
   # Create src CloudVolumes
