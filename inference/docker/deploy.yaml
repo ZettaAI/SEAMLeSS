@@ -3,13 +3,13 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    run: seamless-manuel
-  name: seamless-manuel
+    run: seamless-2
+  name: seamless-2
 spec:
-  replicas: 1 
+  replicas: 0
   selector:
     matchLabels:
-      run: seamless-manuel
+      run: seamless-2
   strategy:
     rollingUpdate:
       maxSurge: 100%
@@ -19,20 +19,23 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        run: seamless-manuel
+        run: seamless-2
     spec:
       containers:
-      - image: seunglab/seamless:manuel-copy-0713
-        name: seamless-manuel
+      - image: gcr.io/zetta-aibs-mouse-001/seamless-fine-fixed-seethruv2
+        name: seamless-2
         imagePullPolicy: Always
         command: ["/bin/sh"]
-        args: ["-c", "python inference/worker.py --processes 4 --device cpu --queue_name manuel-seamless --lease_seconds 10"]
+        args: ["-c", "python inference/worker.py --processes 4 --queue_name manuel-seamless --lease_seconds 10"]
         resources: 
           limits:
             nvidia.com/gpu: 1
         volumeMounts:
         - name: secrets
           mountPath: /root/.cloudvolume/secrets
+          readOnly: true
+        - mountPath: /root/.aws/credentials
+          name: credentials
           readOnly: true
       dnsPolicy: Default
       volumes:
