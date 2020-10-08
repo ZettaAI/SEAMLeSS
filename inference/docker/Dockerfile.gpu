@@ -9,7 +9,7 @@ COPY ./utilities/ /opt/SEAMLeSS/utilities
 RUN apt-get update \
   # Install SEAMLeSS dependencies
   && apt-get install -y --no-install-recommends \
-      libgtk2.0-dev \
+      libgtk2.0-dev libgl1-mesa-glx \
   && pip install pip==20.0.2 \
   && pip install wheel \
   && pip install --no-cache-dir -r requirements.txt \
