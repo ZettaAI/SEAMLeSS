@@ -641,6 +641,7 @@ class RenderTask(RegisteredTask):
                                      return_mask=False,
                                      blackout_mask_op=self.blackout_op)
       else:
+         import ipdb; ipdb.set_trace()
          image, mask_data = aligner.cloudsample_image(src_cv, field_cv, src_z, field_z,
                                      patch_bbox, src_mip, field_mip,
                                      masks=masks,
@@ -732,7 +733,11 @@ class RenderTask(RegisteredTask):
                  image[fold_blackout_region] = 1.0 / 255.0
 
       image = image.cpu().numpy()
-      aligner.save_image(image, dst_cv, dst_z, patch_bbox, src_mip)
+      try:
+        aligner.save_image(image, dst_cv, dst_z, patch_bbox, src_mip)
+      except:
+        import ipdb
+        ipdb.set_trace()
       if self.report and aligner.completed_task_queue is not None:
           api_obj = aligner.completed_task_queue._api
           sqs_obj = aligner.completed_task_queue._api._sqs
