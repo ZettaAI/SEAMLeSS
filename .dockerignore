@@ -135,5 +135,8 @@ inference/docker/secret.yaml
 .git/
 
 # isolate single modle
-models/
-# !models/alex_CrackNet0113/**
+# models/
+!models/Zetta_ResinNet1021/**
+!models/Zetta_FilmNet1018/**
+!models/Zetta_FoldNet1014/**
+!models/Zetta_CrackNet1018/**
