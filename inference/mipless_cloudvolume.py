@@ -29,7 +29,7 @@ def deserialize_miplessCV(s, cache={}):
         return None
 
     cv_kwargs = {'bounded': False, 'progress': False,
-              'autocrop': False, 'non_aligned_writes': False,
+              'autocrop': False, 'non_aligned_writes': True,
               'cdn_cache': False}
     if s in cache:
       return cache[s]

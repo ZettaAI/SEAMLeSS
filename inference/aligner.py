@@ -496,7 +496,7 @@ class Aligner:
     else:
       return field
 
-  def save_field(self, field, cv, z, bbox, mip, relative, as_int16=True):
+  def save_field(self, field, cv, z, bbox, mip, relative, as_int16=True, permute=True):
     """Save vector field to CloudVolume.
 
     Args
@@ -516,7 +516,8 @@ class Aligner:
     # field = field.data.cpu().numpy()
     x_range = bbox.x_range(mip=mip)
     y_range = bbox.y_range(mip=mip)
-    field = np.transpose(field, (1,2,0,3))
+    if permute:
+      field = np.transpose(field, (1,2,0,3))
     print('save_field for {0} at MIP{1} to {2}'.format(bbox.stringify(z),
                                                        mip, cv.path))
     # if as_int16:
@@ -704,6 +705,67 @@ class Aligner:
 
     return field
 
+  def invert_field_hack_chunk(self, bbox, src_cv, src_z, mip, dst_cvs, pad):
+    padded_tgt_bbox_fine = deepcopy(bbox)
+    padded_tgt_bbox_fine.uncrop(pad, mip)
+    old_x = padded_tgt_bbox_fine.m0_x 
+    old_y = padded_tgt_bbox_fine.m0_y
+    padded_tgt_bbox_fine.m0_x = (old_x[0] + 256, old_x[1] + 256)
+    padded_tgt_bbox_fine.m0_y = (old_y[0] + 256, old_y[1] + 256)
+    tgt_coarse_field = self.get_field(
+      src_cv,
+      src_z,
+      padded_tgt_bbox_fine,
+      mip,
+      relative=True,
+      to_tensor=True,
+    ).to(device='cpu')
+    tgt_coarse_field = tgt_coarse_field.permute(0, 3, 1, 2).field_()
+    tgt_coarse_field_inv = tgt_coarse_field.inverse()
+    # tgt_coarse_field_inv = self.rel_to_abs_residual(tgt_coarse_field_inv, mip)
+    pbbox = padded_tgt_bbox_fine
+    if pbbox.m0_x[0] == -2560 and pbbox.m0_y[0] == -2560:
+      dst_cv = dst_cvs[0]
+    elif pbbox.m0_x[0] == 521728 and pbbox.m0_y[0] == -2560:
+      dst_cv = dst_cvs[1]
+    elif pbbox.m0_x[0] == -2560 and pbbox.m0_y[0] == 521728:
+      dst_cv = dst_cvs[2]
+    else:
+      dst_cv = dst_cvs[3]
+    tgt_coarse_field_inv = tgt_coarse_field_inv.permute(2, 3, 0, 1)
+    tgt_coarse_field_inv = tgt_coarse_field_inv.cpu().numpy()
+    self.save_field(tgt_coarse_field_inv, dst_cv, src_z, padded_tgt_bbox_fine, mip, relative=True, permute=False)
+    # tgt_coarse_field_inv = tgt_coarse_field_inv.to(device=self.device)
+
+  def invert_field_hack(self, cm, src_cv, dst_cvs, src_z, bbox, mip, pad, return_iterator=False):
+    start = time()
+    chunks = self.break_into_chunks(bbox, cm.dst_chunk_sizes[mip],
+                                    cm.dst_voxel_offsets[mip], mip=mip,
+                                    max_mip=cm.max_mip)
+    class InvertFieldHackTaskIterator():
+        def __init__(self, cl, start, stop):
+          self.chunklist = cl
+          self.start = start
+          self.stop = stop
+        def __len__(self):
+          return self.stop - self.start
+        def __getitem__(self, slc):
+          itr = deepcopy(self)
+          itr.start = slc.start
+          itr.stop = slc.stop
+          return itr
+        def __iter__(self):
+          for i in range(self.start, self.stop):
+            chunk = self.chunklist[i]
+            yield tasks.InvertFieldHackTask(src_cv, dst_cvs, src_z, chunk, mip, pad)
+    if return_iterator:
+        return InvertFieldHackTaskIterator(chunks,0, len(chunks))
+    else:
+        batch = []
+        for chunk in chunks:
+          batch.append(tasks.InvertFieldHackTask(src_cv, dst_cvs, src_z, chunk, mip, pad))
+        return batch
+
   def compute_field_chunk(
     self,
     model_path,
@@ -722,7 +784,8 @@ class Aligner:
     prev_field_z=None,
     coarse_field_cv=None,
     coarse_field_mip=None,
-    tgt_field_cv=None
+    tgt_field_cv=None,
+    invert_cvs=[]
   ):
     """Run inference with SEAMLeSS model on two images stored as CloudVolume regions.
 
@@ -779,26 +842,68 @@ class Aligner:
       #HACKS
       # tgt_field = torch.zeros_like(tgt_field)
 
+
       if coarse_field_cv is not None and not is_identity(tgt_field):
         # Alignment with coarse field: Need to subtract the coarse field out of
         # the tgt_field to get the current alignment drift
-        tgt_coarse_field = self.get_field(
-          coarse_field_cv,
-          tgt_z,
-          padded_tgt_bbox_fine,
-          coarse_field_mip,
-          relative=True,
-          to_tensor=True,
-        ).to(device=self.device)
+        # tgt_coarse_field = self.get_field(
+        #   coarse_field_cv,
+        #   tgt_z,
+        #   padded_tgt_bbox_fine,
+        #   coarse_field_mip,
+        #   relative=True,
+        #   to_tensor=True,
+        # ).to(device='cpu')
 
-        #HACKS
-        # tgt_coarse_field = torch.zeros_like(tgt_coarse_field)
+        # #HACKS
+        # # tgt_coarse_field = torch.zeros_like(tgt_coarse_field)
+        # # import ipdb
+        # # ipdb.set_trace()
 
-        tgt_coarse_field = tgt_coarse_field.permute(0, 3, 1, 2).field_()
-        tgt_coarse_field_inv = tgt_coarse_field.inverse().up(coarse_field_mip - mip)
+        # tgt_coarse_field = tgt_coarse_field.permute(0, 3, 1, 2).field_()
+        # tgt_coarse_field_inv = tgt_coarse_field.inverse().up(coarse_field_mip - mip)
+        # tgt_coarse_field_inv = tgt_coarse_field_inv.to(device=self.device)
 
+        # tgt_drift_field = tgt_coarse_field_inv.compose_with(tgt_field.permute(0, 3, 1, 2).field_())
+        # tgt_drift_field = tgt_drift_field.permute(0, 2, 3, 1)
+        
+        if len(invert_cvs) > 0 and str(coarse_field_cv) == 'gs://zetta_aibs_mouse_unaligned/precoarse/prod_run_fixed/field/stitch/compose':
+          pbbox = padded_tgt_bbox_fine
+          if pbbox.m0_x[0] == -2560 and pbbox.m0_y[0] == -2560:
+            invert_cv = invert_cvs[0]
+          elif pbbox.m0_x[0] == 521728 and pbbox.m0_y[0] == -2560:
+            invert_cv = invert_cvs[1]
+          elif pbbox.m0_x[0] == -2560 and pbbox.m0_y[0] == 521728:
+            invert_cv = invert_cvs[2]
+          else:
+            invert_cv = invert_cvs[3]
+          inverse_tgt_field = self.get_field(
+            invert_cv,
+            tgt_z,
+            padded_tgt_bbox_fine,
+            coarse_field_mip,
+            relative=True,
+            to_tensor=True,
+          ).to(device=self.device)
+          inverse_tgt_field = inverse_tgt_field.permute(0, 3, 1, 2).field_()
+          tgt_coarse_field_inv = inverse_tgt_field * 2064
+        else:
+          tgt_coarse_field = self.get_field(
+            coarse_field_cv,
+            tgt_z,
+            padded_tgt_bbox_fine,
+            coarse_field_mip,
+            relative=True,
+            to_tensor=True,
+          ).to(device='cpu')
+          tgt_coarse_field = tgt_coarse_field.permute(0, 3, 1, 2).field_()
+          tgt_coarse_field_inv = tgt_coarse_field.inverse().up(coarse_field_mip - mip)
+          tgt_coarse_field_inv = tgt_coarse_field_inv.to(device=self.device)
+        
         tgt_drift_field = tgt_coarse_field_inv.compose_with(tgt_field.permute(0, 3, 1, 2).field_())
         tgt_drift_field = tgt_drift_field.permute(0, 2, 3, 1)
+        
+        # ipdb.set_trace()
       else:
         # Alignment without coarse field: tgt_field contains only the drift
         # or prev_field is identity
@@ -1489,7 +1594,8 @@ class Aligner:
                     tgt_masks=[],
                     return_iterator=False, prev_field_cv=None, prev_field_z=None,
                     prev_field_inverse=False, coarse_field_cv=None,
-                    coarse_field_mip=0,tgt_field_cv=None,stitch=False,report=False,block_start=None,cur_field_cv=None,unaligned_cv=None):
+                    coarse_field_mip=0,tgt_field_cv=None,stitch=False,report=False,block_start=None,cur_field_cv=None,unaligned_cv=None,
+                    invert_cvs=[]):
     """Compute field to warp src section to tgt section
 
     Args:
@@ -1536,7 +1642,7 @@ class Aligner:
                                           src_mask,
                                           tgt_mask,
                                           prev_field_cv, prev_field_z, prev_field_inverse,
-                                          coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch, report, block_start,cur_field_cv,unaligned_cv)
+                                          coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch, report, block_start,cur_field_cv,unaligned_cv,invert_cvs)
     if return_iterator:
         return ComputeFieldTaskIterator(chunks,0, len(chunks))
     else:
@@ -1547,7 +1653,7 @@ class Aligner:
                                               src_masks,
                                               tgt_masks,
                                               prev_field_cv, prev_field_z, prev_field_inverse,
-                                              coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch, report, block_start,cur_field_cv,unaligned_cv))
+                                              coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch, report, block_start,cur_field_cv,unaligned_cv,invert_cvs))
         return batch
 
   def seethrough_stitch_render(self, cm, src_cv, dst_cv, z_start, z_end,

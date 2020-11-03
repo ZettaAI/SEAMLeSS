@@ -28,7 +28,7 @@ class Model(nn.Module):
         self.range_adjust = False
         self.device = kwargs.get('device', 'cuda' if torch.cuda.is_available() else 'cpu')
 
-        a = artificery.Artificery(device=self.device)
+        a = artificery.Artificery()
         path = os.path.dirname(os.path.abspath(__file__))
         checkpoint_folder_path = os.path.join(path, 'checkpoint')
         spec_path = os.path.join(checkpoint_folder_path, "model_spec.json")

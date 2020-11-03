@@ -126,11 +126,37 @@ class CopyTask(RegisteredTask):
       diff = end - start
       print(':{:.3f} s'.format(diff))
 
+class InvertFieldHackTask(RegisteredTask):
+  def __init__(self, src_cv, dst_cvs, z, chunk, mip, pad):
+    super().__init__(src_cv, dst_cvs, z, chunk, mip, pad)
+
+  def execute(self, aligner):
+    src_cv = DCV(self.src_cv)
+    dst_cvs = []
+    for dst_cv in self.dst_cvs:
+      dst_cvs.append(DCV(dst_cv))
+    z = self.z
+    chunk = deserialize_bbox(self.chunk)
+    mip = self.mip
+    pad = self.pad
+    
+    print("\nInvertFieldHackTask\n"
+          "src {}\n"
+          "z={}\n"
+          "MIP{}\n".format(src_cv, z, mip), flush=True)
+    start = time()
+    aligner.invert_field_hack_chunk(chunk, src_cv, z, mip, dst_cvs, pad)
+    end = time()
+    diff = end - start
+    print('InvertFieldHackTask: {:.3f} s'.format(diff))
+
+
+
 class ComputeFieldTask(RegisteredTask):
   def __init__(self, model_path, src_cv, tgt_cv, field_cv, src_z, tgt_z,
                      patch_bbox, mip, pad, src_masks, tgt_masks,
                      prev_field_cv, prev_field_z, prev_field_inverse,
-                     coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch=False, report=False, block_start=None, cur_field_cv=None, unaligned_cv=None):
+                     coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch=False, report=False, block_start=None, cur_field_cv=None, unaligned_cv=None, invert_cvs=[]):
     #src_serialized_masks = [m.to_dict() for m in src_masks]
     #tgt_serialized_masks = [m.to_dict() for m in tgt_masks]
 
@@ -144,7 +170,7 @@ class ComputeFieldTask(RegisteredTask):
                      patch_bbox, mip, pad, src_masks,
                      tgt_masks,
                      prev_field_cv, prev_field_z, prev_field_inverse,
-                     coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch, report, block_start, cur_field_cv, unaligned_cv)
+                     coarse_field_cv, coarse_field_mip, tgt_field_cv, stitch, report, block_start, cur_field_cv, unaligned_cv, invert_cvs)
 
   def execute(self, aligner):
     model_path = self.model_path
@@ -169,7 +195,9 @@ class ComputeFieldTask(RegisteredTask):
     }
     mip = self.mip
     pad = self.pad
-
+    invert_cvs = []
+    for invert_cv in self.invert_cvs:
+      invert_cvs.append(DCV(invert_cv))
 
     tgt_masks = [Mask(**m) for m in self.tgt_masks]
     for tgt_mask in tgt_masks:
@@ -224,7 +252,7 @@ class ComputeFieldTask(RegisteredTask):
                                             bbox=patch_bbox, mip=mip, pad=pad,
                                             src_masks=src_masks, tgt_masks=tgt_masks,
                                             tgt_alt_z=None, prev_field_cv=prev_field_cv, prev_field_z=prev_field_z,
-                                            coarse_field_cv=coarse_field_cv, coarse_field_mip=coarse_field_mip, tgt_field_cv=tgt_field_cv)
+                                            coarse_field_cv=coarse_field_cv, coarse_field_mip=coarse_field_mip, tgt_field_cv=tgt_field_cv, invert_cvs=invert_cvs)
         aligner.save_field(field, field_cv, src_z, patch_bbox, mip, relative=False)
         if self.report and aligner.completed_task_queue is not None:
           print('Reporting to completed queue...')
