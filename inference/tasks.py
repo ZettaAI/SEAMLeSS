@@ -10,7 +10,7 @@ from copy import deepcopy
 from os.path import join
 from functools import partial
 from mipless_cloudvolume import deserialize_miplessCV as DCV
-from cloudvolume import Storage
+from cloudvolume import Storage, CloudVolume
 from cloudvolume.lib import scatter
 from boundingbox import BoundingBox, deserialize_bbox
 from fcorr import fcorr_conjunction
@@ -269,6 +269,7 @@ class AverageFieldTask(RegisteredTask):
 
   def execute(self, aligner):
     dst_field_cv = DCV(self.dst_field_cv)
+    # dst_field_cv = CloudVolume(self.dst_field_cv, mip=self.dst_field_mip)
     field_cv = DCV(self.field_cv)
     src_z = self.src_z
     dst_z = self.dst_z
@@ -305,9 +306,8 @@ class AverageFieldTask(RegisteredTask):
     zzz[0][0][0] = distance.cpu().numpy()
     # import ipdb
     # ipdb.set_trace()
-    dst_field_cv[0][x_ind,y_ind,src_z] = zzz
-
-# class AdjustFieldTask(RegisteredTask):
+    dst_field_cv[0][0,0,src_z] = zzz
+    # dst_field_cv[x_ind,y_ind,src_z] = zzz
 
 
 class SplitFieldTask(RegisteredTask):

@@ -112,6 +112,7 @@ if __name__ == "__main__":
         action='store_true',
         help="If True, skip compute field and vector voting"
     )
+    parser.add_argument('--image_check', type=str)
     # parser.add_argument("--chunk_size", type=int, default=1024)
 
     args = parse_args(parser)
@@ -131,6 +132,8 @@ if __name__ == "__main__":
     output_field_path = args.output_field_path
     render_dst = args.render_dst
     do_average = not args.skip_average
+
+    image_check = args.image_check
 
     # Create CloudVolume Manager
     cm = CloudManager(
@@ -162,9 +165,6 @@ if __name__ == "__main__":
         overwrite=True,
     ).path
 
-    # import ipdb
-    # ipdb.set_trace()
-
     volume_size = list(np.array(cm.vec_total_sizes[mip][0:2]) // np.array(cm.dst_chunk_sizes[mip]))
 
     avg_field_path = join(output_field_path, "_avg_chunk")
@@ -181,8 +181,8 @@ if __name__ == "__main__":
     )
     avg_field_vol = CloudVolume(avg_field_path, info=avg_field_info)
     avg_field_vol.commit_info()
-    # bbox = BoundingBox(0, 491520, 0, 491520, 0, args.max_mip)
-    bbox = BoundingBox(150000, 180000, 50000, 80000, 0, args.max_mip)
+    bbox = BoundingBox(0, 515584, 0, 515584, 0, args.max_mip)
+    # bbox = BoundingBox(150000, 180000, 50000, 80000, 0, args.max_mip)
     avg_chunk_bbox = BoundingBox(0, volume_size[0], 0, volume_size[1], 0, 0)
 
     avg_field_section_path = join(output_field_path, "_avg_section")
@@ -278,6 +278,9 @@ if __name__ == "__main__":
         if skip_first:
             block_overlap = block_overlap - 1
         stitching_sections.append(cur_block_start + block_overlap)
+
+    # import ipdb
+    # ipdb.set_trace()
     
     # Task scheduling functions
     def remote_upload(tasks):
@@ -353,9 +356,9 @@ if __name__ == "__main__":
 
         def __iter__(self):
             for z in self.z_range:
-                yield tasks.AverageFieldTask(avg_field_path, 0, avg_field_section_path, 
-                                            0, avg_chunk_bbox, None, 
-                                            pad, z, z)
+                yield tasks.AverageFieldTask(field, 8, avg_field_section_path, 
+                                            0, bbox, image_check, 
+                                            0, z, z)
 
     class SplitField:
         def __init__(self, z_range):
@@ -397,7 +400,7 @@ if __name__ == "__main__":
     # execute(AverageFieldChunk, [22654])
     # execute(AverageFieldSection, [22654])
     if do_average:
-        execute(AverageFieldChunk, stitching_sections)
+        # execute(AverageFieldChunk, stitching_sections)
         execute(AverageFieldSection, stitching_sections)
     execute(SplitField, stitching_sections)
     
