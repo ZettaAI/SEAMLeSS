@@ -11,7 +11,7 @@ from math import floor
 
 from taskqueue import GreenTaskQueue, LocalTaskQueue, MockTaskQueue, TaskQueue
 
-from args import get_aligner, get_argparser, get_provenance, parse_args
+from args import get_aligner, get_argparser, get_provenance, parse_args, get_bbox
 from boundingbox import BoundingBox
 from cloudmanager import CloudManager
 import numpy as np
@@ -41,6 +41,12 @@ if __name__ == "__main__":
     parser.add_argument("--dst_path", type=str)
     parser.add_argument("--z_start", type=int)
     parser.add_argument("--z_stop", type=int)
+    parser.add_argument('--bbox_start', nargs=3, type=int,
+      help='bbox origin, 3-element int list')
+    parser.add_argument('--bbox_stop', nargs=3, type=int,
+      help='bbox origin+shape, 3-element int list')
+    parser.add_argument('--bbox_mip', type=int, default=0,
+      help='MIP level at which bbox_start & bbox_stop are specified')
     parser.add_argument("--mip", type=int)
     parser.add_argument("--max_mip", type=int, default=9)
     parser.add_argument("--chunk_size", type=int, default=1024)
@@ -65,7 +71,8 @@ if __name__ == "__main__":
 
     max_mip = args.max_mip
     mip = args.mip
-    bbox = BoundingBox(0, 491520, 0, 491520, 0, args.max_mip)
+    # bbox = BoundingBox(0, 491520, 0, 491520, 0, args.max_mip)
+    bbox = get_bbox(args)
     src_masks = []
     src_masks = [Mask(**m) for m in args.src_masks]
     provenance = get_provenance(args)
@@ -109,7 +116,7 @@ if __name__ == "__main__":
                 print("Run {}".format(task_iterator))
                 # wait
                 start = time()
-                a.wait_for_sqs_empty()
+                # a.wait_for_sqs_empty()
                 end = time()
                 diff = end - start
                 print("Executing {} use time: {}\n".format(task_iterator, diff))
