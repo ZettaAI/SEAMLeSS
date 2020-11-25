@@ -588,8 +588,7 @@ if __name__ == "__main__":
                 print("Run {}".format(task_iterator))
                 # wait
                 start = time()
-                if do_alignment:
-                    a.wait_for_sqs_empty()
+                a.wait_for_sqs_empty()
                 end = time()
                 diff = end - start
                 print("Executing {} use time: {}\n".format(task_iterator, diff))
@@ -976,16 +975,28 @@ if __name__ == "__main__":
 
         def __iter__(self):
           for z in self.z_range:
-            influencing_blocks = influencing_blocks_lookup[z]
-            factors = [interpolate(z, bs, decay_dist) for bs in influencing_blocks]
-            factors += [1.]
-            print('z={}\ninfluencing_blocks {}\nfactors {}'.format(z, influencing_blocks,
-                                                                   factors))
             bbox = bbox_lookup[z]
-            cv_list = [broadcasting_field]*len(influencing_blocks) + [block_vvote_field]
-            z_list = list(influencing_blocks) + [z]
-            t = a.multi_compose(cm, cv_list, compose_field, z_list, z, bbox,
-                                mip, mip, factors, pad)
+            if z == args.z_start:
+                t = a.cloud_upsample_field(
+                    cm,
+                    coarse_field_cv,
+                    compose_field,
+                    src_z=z,
+                    dst_z=z,
+                    bbox=bbox,
+                    src_mip=coarse_field_mip,
+                    dst_mip=mip
+                )
+            else:
+                influencing_blocks = influencing_blocks_lookup[z]
+                factors = [interpolate(z, bs, decay_dist) for bs in influencing_blocks]
+                factors += [1.]
+                print('z={}\ninfluencing_blocks {}\nfactors {}'.format(z, influencing_blocks,
+                                                                    factors))
+                cv_list = [broadcasting_field]*len(influencing_blocks) + [block_vvote_field]
+                z_list = list(influencing_blocks) + [z]
+                t = a.multi_compose(cm, cv_list, compose_field, z_list, z, bbox,
+                                    mip, mip, factors, pad)
             yield from t
 
     class StitchFinalRender(object):
