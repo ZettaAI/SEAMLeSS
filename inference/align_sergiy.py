@@ -283,8 +283,6 @@ if __name__ == "__main__":
             fill_missing=True,
             overwrite=do_render,
         ).path
-    # import ipdb
-    # ipdb.set_trace
 
     secret_skip_list = []
     if args.skip_list_lookup is not None:
@@ -304,7 +302,7 @@ if __name__ == "__main__":
     # skip_list = [17491, 17891]
     alignment_z_starts = [args.z_start]
     last_alignment_start = args.z_start
-    minimum_block_size = 5
+    minimum_block_size = 7
     with open(args.param_lookup) as f:
         reader = csv.reader(f, delimiter=",")
         for k, r in enumerate(reader):
