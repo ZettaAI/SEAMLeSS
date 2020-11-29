@@ -836,7 +836,15 @@ class Aligner:
             relative=True,
             to_tensor=True,
           ).to(device=self.device)
-      tgt_field[tgt_field != tgt_field] = 0
+      if torch.isnan(tgt_field).any():
+        temp_clone = torch.clone(tgt_field)
+        temp_clone[temp_clone != temp_clone] = 0
+        profiled_field = self.profile_field(temp_clone)
+        first_dim = tgt_field[...,0]
+        tgt_field[...,0][first_dim != first_dim] = profiled_field[0]
+        second_dim = tgt_field[...,1]
+        tgt_field[...,1][second_dim != second_dim] = profiled_field[1]
+        del temp_clone
       #HACKS
       # tgt_field = torch.zeros_like(tgt_field)
 
@@ -923,6 +931,15 @@ class Aligner:
         relative=False,
         to_tensor=True,
       ).to(device=self.device)
+      if torch.isnan(coarse_field).any():
+          temp_clone = torch.clone(coarse_field)
+          temp_clone[temp_clone != temp_clone] = 0
+          profiled_field = self.profile_field(temp_clone)
+          first_dim = coarse_field[...,0]
+          coarse_field[...,0][first_dim != first_dim] = profiled_field[0]
+          second_dim = coarse_field[...,1]
+          coarse_field[...,1][second_dim != second_dim] = profiled_field[1]
+          del temp_clone
       if padded_src_bbox_coarse_field.m0_x[0] < -512 or padded_src_bbox_coarse_field.m0_y[0] < -512:
         profiled_field = self.profile_field(coarse_field).to(device=self.device)
         if padded_src_bbox_coarse_field.m0_x[0] < -512:
