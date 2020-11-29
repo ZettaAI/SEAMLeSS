@@ -634,6 +634,15 @@ class Aligner:
     if prev_field_cv is not None and cur_field_cv is not None:
         prev_coarse_field = self.get_field(coarse_field_cv, prev_field_z, padded_bbox, coarse_field_mip,
                            relative=False, to_tensor=True)
+        if torch.isnan(prev_coarse_field).any():
+          temp_clone = torch.clone(prev_coarse_field)
+          temp_clone[temp_clone != temp_clone] = 0
+          profiled_field = self.profile_field(temp_clone).to(device=self.device)
+          first_dim = prev_coarse_field[...,0]
+          prev_coarse_field[...,0][first_dim != first_dim] = profiled_field[0]
+          second_dim = prev_coarse_field[...,1]
+          prev_coarse_field[...,1][second_dim != second_dim] = profiled_field[1]
+          del temp_clone
         prev_coarse_field = upsample_field(prev_coarse_field, coarse_field_mip, mip)
         prev_field = self.get_field(prev_field_cv, prev_field_z, padded_bbox, mip,
                            relative=True, to_tensor=True)
@@ -642,6 +651,15 @@ class Aligner:
         cur_field = self.get_field(cur_field_cv, src_z, padded_bbox, mip,
                            relative=True, to_tensor=True)
         cur_coarse_field = self.get_field(coarse_field_cv, src_z, padded_bbox, coarse_field_mip, relative=False, to_tensor=True)
+        if torch.isnan(cur_coarse_field).any():
+          temp_clone = torch.clone(cur_coarse_field)
+          temp_clone[temp_clone != temp_clone] = 0
+          profiled_field = self.profile_field(temp_clone).to(device=self.device)
+          first_dim = cur_coarse_field[...,0]
+          cur_coarse_field[...,0][first_dim != first_dim] = profiled_field[0]
+          second_dim = cur_coarse_field[...,1]
+          cur_coarse_field[...,1][second_dim != second_dim] = profiled_field[1]
+          del temp_clone
         cur_coarse_field = upsample_field(cur_coarse_field, coarse_field_mip, mip)
         src_raw_patch = self.get_masked_image(unaligned_cv, src_z, padded_bbox, mip,
                                 masks=[],
@@ -839,7 +857,7 @@ class Aligner:
       if torch.isnan(tgt_field).any():
         temp_clone = torch.clone(tgt_field)
         temp_clone[temp_clone != temp_clone] = 0
-        profiled_field = self.profile_field(temp_clone)
+        profiled_field = self.profile_field(temp_clone).to(device=self.device)
         first_dim = tgt_field[...,0]
         tgt_field[...,0][first_dim != first_dim] = profiled_field[0]
         second_dim = tgt_field[...,1]
@@ -862,7 +880,7 @@ class Aligner:
         if torch.isnan(tgt_coarse_field).any():
           temp_clone = torch.clone(tgt_coarse_field)
           temp_clone[temp_clone != temp_clone] = 0
-          profiled_field = self.profile_field(temp_clone)
+          profiled_field = self.profile_field(temp_clone).to(device=self.device)
           first_dim = tgt_coarse_field[...,0]
           tgt_coarse_field[...,0][first_dim != first_dim] = profiled_field[0]
           second_dim = tgt_coarse_field[...,1]
@@ -934,7 +952,7 @@ class Aligner:
       if torch.isnan(coarse_field).any():
           temp_clone = torch.clone(coarse_field)
           temp_clone[temp_clone != temp_clone] = 0
-          profiled_field = self.profile_field(temp_clone)
+          profiled_field = self.profile_field(temp_clone).to(device=self.device)
           first_dim = coarse_field[...,0]
           coarse_field[...,0][first_dim != first_dim] = profiled_field[0]
           second_dim = coarse_field[...,1]
