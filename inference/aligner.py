@@ -880,7 +880,7 @@ class Aligner:
         if torch.isnan(tgt_coarse_field).any():
           temp_clone = torch.clone(tgt_coarse_field)
           temp_clone[temp_clone != temp_clone] = 0
-          profiled_field = self.profile_field(temp_clone).to(device=self.device)
+          profiled_field = self.profile_field(temp_clone)
           first_dim = tgt_coarse_field[...,0]
           tgt_coarse_field[...,0][first_dim != first_dim] = profiled_field[0]
           second_dim = tgt_coarse_field[...,1]
