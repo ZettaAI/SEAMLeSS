@@ -851,7 +851,16 @@ class Aligner:
           relative=True,
           to_tensor=True,
         ).to(device='cpu')
-        tgt_coarse_field[tgt_coarse_field != tgt_coarse_field] = 0
+        if torch.isnan(tgt_coarse_field).any():
+          temp_clone = torch.clone(tgt_coarse_field)
+          temp_clone[temp_clone != temp_clone] = 0
+          profiled_field = self.profile_field(temp_clone)
+          first_dim = tgt_coarse_field[...,0]
+          tgt_coarse_field[...,0][first_dim != first_dim] = profiled_field[0]
+          second_dim = tgt_coarse_field[...,1]
+          tgt_coarse_field[...,1][second_dim != second_dim] = profiled_field[1]
+          del temp_clone
+        # tgt_coarse_field[tgt_coarse_field != tgt_coarse_field] = 0
 
         #HACKS
         # tgt_coarse_field = torch.zeros_like(tgt_coarse_field)
