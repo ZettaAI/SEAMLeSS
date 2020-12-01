@@ -10,7 +10,7 @@ from copy import deepcopy
 from os.path import join
 from functools import partial
 from mipless_cloudvolume import deserialize_miplessCV as DCV
-from cloudvolume import Storage
+from cloudvolume import Storage, CloudVolume
 from cloudvolume.lib import scatter
 from boundingbox import BoundingBox, deserialize_bbox
 from fcorr import fcorr_conjunction
@@ -348,6 +348,23 @@ class RenderMasksTask(RegisteredTask):
       end = time()
       diff = end - start
       print('RenderMaskTask: {:.3f} s'.format(diff))
+
+class CheckForNAN(RegisteredTask):
+  def __init__(self, src_path, dst_path, mip, z):
+    super().__init__(src_path, dst_path, mip, z)
+
+  def execute(self, aligner):
+    src_path = self.src_path
+    dst_path = self.dst_path
+    mip = self.mip
+    z = self.z
+    src_cv = CloudVolume(src_path, mip=mip, fill_missing=True)
+    dst_cv = CloudVolume(dst_path, mip=0)
+    field_data = src_cv[:,:,z]
+    if np.isnan(field_data).any():
+      dst_cv[0,0,z] = 255
+    else:
+      dst_cv[0,0,z] = 0
 
 
 class RenderTask(RegisteredTask):

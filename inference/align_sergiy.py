@@ -867,10 +867,13 @@ if __name__ == "__main__":
                         field = stitch_pair_fields[tgt_offset]
                     t = a.compute_field(cm, model_path, block_dst, overlap_image, field,
                                         z, tgt_z, bbox, mip, pad,
-                                        src_masks=[],
-                                        tgt_masks=[],
-                                        prev_field_cv=None,
-                                        prev_field_z=tgt_z,stitch=True)
+                                        src_masks=src_masks,
+                                        tgt_masks=tgt_masks,
+                                        prev_field_cv=block_vvote_field,
+                                        cur_field_cv=block_vvote_field,
+                                        coarse_field_cv=coarse_field_cv,
+                                        coarse_field_mip=coarse_field_mip,
+                                        prev_field_z=tgt_z,stitch=True,unaligned_cv=src)
                     yield from t
 
     class StitchAlignVectorVote(object):

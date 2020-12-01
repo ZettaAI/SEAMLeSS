@@ -621,7 +621,7 @@ class Aligner:
     model = modelhouse.load_model_simple(model_path,
             finetune=True,
             pass_field=True,
-            finetune_iter=600,
+            finetune_iter=400,
             finetune_lr=3e-1,
             finetune_sm=30e0,
             checkpoint_name='test')
@@ -705,6 +705,10 @@ class Aligner:
                                 to_tensor=True, normalizer=normalizer)
     src_patch = self.norm_patch(src_patch)
     tgt_patch = self.norm_patch(tgt_patch)
+    if torch.isnan(tgt_patch).any():
+      tgt_patch = torch.zeros_like(src_patch)
+    if torch.isnan(src_patch).any():
+      src_patch = torch.zeros_like(tgt_patch)
     print('src_patch.shape {}'.format(src_patch.shape))
     print('tgt_patch.shape {}'.format(tgt_patch.shape))
 
