@@ -366,6 +366,27 @@ class CheckForNAN(RegisteredTask):
     else:
       dst_cv[0,0,z] = 0
 
+class FindMaxMin(RegisteredTask):
+  def __init__(self, src_path, dst_path, mip, z):
+    super().__init__(src_path, dst_path, mip, z)
+
+  def execute(self, aligner):
+    src_path = self.src_path
+    dst_path = self.dst_path
+    mip = self.mip
+    z = self.z
+    src_cv = CloudVolume(src_path, mip=mip, fill_missing=True)
+    dst_cv = CloudVolume(dst_path, mip=0)
+    img_data = src_cv[:,:,z]
+    dst_data = np.zeros(shape=(2,2,1,1), dtype=np.float32)
+    temp = np.where(img_data != 0)
+    if len(img_data[0]) > 0:
+      sum_data = np.array([[np.min(temp[0]), np.min(temp[1])], [np.max(temp[0]), np.max(temp[1])]])
+    else:
+      sum_data = np.array([[-1, -1], [-1, -1]])
+    dst_data[:,:,0,0] = sum_data
+    dst_cv[:,:,z] = dst_data
+
 
 class RenderTask(RegisteredTask):
   def __init__(self, src_cv, field_cv, dst_cv, src_z, field_z, dst_z, patch_bbox, src_mip,
