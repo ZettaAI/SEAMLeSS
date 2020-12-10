@@ -280,15 +280,17 @@ class AverageFieldTask(RegisteredTask):
     padded_bbox = deepcopy(patch_bbox)
     padded_bbox.uncrop(pad, mip=field_mip)
     if self.image_check is not None:
-      field = aligner.get_field(field_cv, src_z, padded_bbox, field_mip, relative=True)
+      field = aligner.get_field(field_cv, src_z, patch_bbox, field_mip, relative=True)
       image_check_cv = DCV(self.image_check)
-      src_raw_patch = aligner.get_masked_image(image_check_cv, src_z, padded_bbox, field_mip,
-                                masks=[],
-                                to_tensor=True, normalizer=None)
-      src_rendered_image = grid_sample(src_raw_patch, field, padding_mode='zeros')
+      # src_raw_patch = aligner.get_masked_image(image_check_cv, src_z, padded_bbox, field_mip,
+                                # masks=[],
+                                # to_tensor=True, normalizer=None)
+      src_rendered_image = aligner.cloudsample_image(image_check_cv, field_cv, src_z, src_z, 
+                              patch_bbox, field_mip, field_mip, pad=512)
+      # src_rendered_image = grid_sample(src_raw_patch, field, padding_mode='zeros')
       field = aligner.rel_to_abs_residual(field, field_mip)
-      # distance = aligner.profile_field(field, [src_rendered_image], 0.2)
-      distance = aligner.profile_field(field, [src_rendered_image], None)
+      distance = aligner.profile_field(field, [src_rendered_image], 0.2)
+      # distance = aligner.profile_field(field, [src_rendered_image], None)
       # import ipdb
       # ipdb.set_trace()
     else:
@@ -306,8 +308,8 @@ class AverageFieldTask(RegisteredTask):
     zzz[0][0][0] = distance.cpu().numpy()
     # import ipdb
     # ipdb.set_trace()
-    dst_field_cv[0][0,0,src_z] = zzz
-    # dst_field_cv[x_ind,y_ind,src_z] = zzz
+    # dst_field_cv[0][0,0,src_z] = zzz
+    dst_field_cv[0][x_ind,y_ind,src_z] = zzz
 
 
 class SplitFieldTask(RegisteredTask):
