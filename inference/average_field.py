@@ -177,7 +177,7 @@ if __name__ == "__main__":
         voxel_offset=[0,0,0],
         chunk_size=[1, 1, 1],
         # volume_size=[*volume_size, 28000],
-        volume_size=[*volume_size, 4500],
+        volume_size=[*volume_size, 17608],
     )
     avg_field_vol = CloudVolume(avg_field_path, info=avg_field_info)
     avg_field_vol.commit_info()
