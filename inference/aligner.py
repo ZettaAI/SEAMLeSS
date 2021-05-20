@@ -901,7 +901,9 @@ class Aligner:
       blackout=False
     )
     if src_mask is not None:
-      src_mask[src_patch == 0] = 1
+      src_mask = torch.where(src_patch == 0, 1, src_mask)
+    else:
+      src_mask = torch.where(src_patch == 0, 1, 0)
     print("src_patch.shape {}".format(src_patch.shape))
     print("tgt_patch.shape {}".format(tgt_patch.shape))
 
