@@ -954,6 +954,7 @@ class Aligner:
         )
       )
 
+      coarse_field = torch.zeros_like(tgt_field)
       coarse_field = coarse_field.permute((0,3,1,2)).field().pixels()
       tgt_field = tgt_field.permute((0,3,1,2)).field().pixels()
       # src_black = src_patch == 0

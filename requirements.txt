@@ -1,10 +1,12 @@
-torch==1.6.0 # 1.7.0 has issues with torchfields
+urllib3==1.26.3
+requests==2.25.1
+#torch # 1.7.0 has issues with torchfields
 # scalenet
 simplejson
 # artificery
 # torchvision
-torchfields
-numpy>=1.16.2
+#torchfields==0.0.6.dev2
+numpy>=1.20
 scikit-image
 matplotlib
 cloud-volume>=0.47.2
@@ -24,7 +26,8 @@ task-queue==1.0.0
 # imageio==2.4.1
 six>=1.13.0
 python-dateutil==2.8.0
-git+git://github.com/supersergiy/modelhouse.git
+git+git://github.com/ZettaAI/modelhouse.git@tmacrina-load-model-simple
 git+git://github.com/supersergiy/artificery.git
 git+git://github.com/seung-lab/scalenet.git@tmacrina-batchnorm
-git+git://github.com/seung-lab/metroem_release.git
+git+git://github.com/seung-lab/torchfields
+git+git://github.com/supersergiy/metroem_release.git

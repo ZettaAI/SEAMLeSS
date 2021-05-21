@@ -1,0 +1,2 @@
+x_start,y_start,z_start,x_stop,y_stop,z_stop,mip,model_name,tgt_radius,skip,comment
+13500,13500,0,27000,27000,723,0,worm_fine,1,0,dodam_worm_testing
